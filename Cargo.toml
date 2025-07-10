@@ -1,0 +1,8 @@
+[package]
+name = "rb_alf_feshbach"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+faer = "0.22.6"
+scattering-problems = {git = "https://github.com/Wleter/quantum-rs"}
