@@ -1,7 +1,7 @@
 use std::time::Instant;
 
 use indicatif::ParallelProgressIterator;
-use scattering_problems::{abm::HifiProblemBuilder, alkali_rotor_atom::ParityBlock, scattering_solver::{boundary::{Boundary, Direction}, log_derivatives::johnson::{Johnson, JohnsonLogDerivative}, numerovs::LocalWavelengthStepRule, observables::{bound_states::{BoundProblemBuilder, BoundStates, BoundStatesDependence}, s_matrix::{ScatteringDependence, ScatteringObservables}}, potentials::potential::{Potential, SimplePotential}, propagator::{CoupledEquation, Propagator}, quantum::{clebsch_gordan::{hi32, hu32}, params::{particle::Particle, particles::Particles}, problem_selector::{get_args, ProblemSelector}, problems_impl, units::{Au, CmInv, Dalton, Energy, EnergyUnit, GHz, Kelvin, MHz, Mass}, utility::linspace}, utility::{save_data, save_serialize}}, FieldScatteringProblem};
+use scattering_problems::{abm::HifiProblemBuilder, alkali_rotor_atom::ParityBlock, scattering_solver::{boundary::{Boundary, Direction}, log_derivatives::johnson::{Johnson, JohnsonLogDerivative}, numerovs::LocalWavelengthStepRule, observables::{bound_states::{BoundProblemBuilder, BoundStates, BoundStatesDependence}, s_matrix::{ScatteringDependence, ScatteringObservables}}, potentials::potential::{Potential, SimplePotential}, propagator::{CoupledEquation, Propagator}, quantum::{clebsch_gordan::{hi32, hu32}, params::{particle::Particle, particles::Particles}, problem_selector::{get_args, ProblemSelector}, problems_impl, units::{Au, CmInv, Dalton, Energy, EnergyUnit, GHz, Kelvin, MHz, Mass}, utility::linspace}, utility::{save_data, save_serialize, save_spectrum}}, FieldScatteringProblem};
 
 use crate::{basis::{BasisRecipe, SystemProblemBuilder, SystemParams, SystemProblem}, hifi_aniso::{get_aniso_hifi, load_aniso_hifi_data, AnisoType}, potential::{get_potential, load_grid_data}};
 
@@ -23,6 +23,7 @@ problems_impl!(Problem, "AlF + Rb problems",
     "anisotropic hyperfine" => |_| Self::aniso_hifi(),
     "scattering length" => |_| Self::scattering_length(),
     "bound states" => |_| Self::bound_states(),
+    "levels" => |_| Self::levels(),
 );
 
 impl Problem {
@@ -110,9 +111,6 @@ impl Problem {
 
         let atoms = get_particles(energy_relative);
         let alkali_problem = get_problem(&params, &basis_recipe);
-
-        println!("{}", alkali_problem.basis);
-
 
         let start = Instant::now();
         let scatterings = mag_fields
@@ -203,6 +201,42 @@ impl Problem {
 
         let filename = format!("alf_rb_bound_states_n_max_{}", basis_recipe.n_max);
         save_serialize(&filename, &data).unwrap()
+    }
+
+    fn levels() {
+        let mag_fields = linspace(0., 200., 500);
+        let basis_recipe = BasisRecipe {
+            l_max: 0,
+            n_max: 0,
+            n_tot_max: 0,
+            tot_m_projection: hi32!(4),
+            parity: ParityBlock::Positive
+        };
+        
+        let params = get_params();
+        let alkali_problem = get_problem(&params, &basis_recipe);
+
+        let start = Instant::now();
+        let levels = mag_fields
+            .par_iter()
+            .progress()
+            .map(|&mag_field| {
+                let (levels, _) = alkali_problem.levels(mag_field, None);
+                
+                levels.into_iter().map(|x| Energy(x, Au).to(GHz).value()).collect()
+            })
+            .collect::<Vec<Vec<f64>>>();
+
+        let elapsed = start.elapsed();
+        println!("calculated in {:.2} s", elapsed.as_secs_f64());
+
+        let filename = format!("alf_rb_levels_n_max_{}", basis_recipe.n_max);
+        save_spectrum(
+            &filename, 
+            "field\tlevels",
+            &mag_fields,
+            &levels
+        ).unwrap()
     }
 }
 
