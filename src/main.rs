@@ -1,7 +1,7 @@
 use std::time::Instant;
 
 use indicatif::ParallelProgressIterator;
-use scattering_problems::{abm::HifiProblemBuilder, alkali_rotor_atom::ParityBlock, scattering_solver::{boundary::{Boundary, Direction}, log_derivatives::johnson::{Johnson, JohnsonLogDerivative}, numerovs::LocalWavelengthStepRule, observables::{bound_states::{BoundProblemBuilder, BoundStates, BoundStatesDependence}, s_matrix::{ScatteringDependence, ScatteringObservables}}, potentials::potential::{Potential, SimplePotential}, propagator::{CoupledEquation, Propagator}, quantum::{clebsch_gordan::{hi32, hu32}, params::{particle::Particle, particles::Particles}, problem_selector::{get_args, ProblemSelector}, problems_impl, units::{Au, CmInv, Dalton, Energy, EnergyUnit, GHz, Kelvin, MHz, Mass}, utility::linspace}, utility::{save_data, save_serialize, save_spectrum}}, FieldScatteringProblem};
+use scattering_problems::{abm::{consts::Consts, HifiProblemBuilder}, alkali_rotor_atom::ParityBlock, scattering_solver::{boundary::{Boundary, Direction}, log_derivatives::johnson::{Johnson, JohnsonLogDerivative}, numerovs::LocalWavelengthStepRule, observables::{bound_states::{BoundProblemBuilder, BoundStates, BoundStatesDependence}, s_matrix::{ScatteringDependence, ScatteringObservables}}, potentials::potential::{Potential, SimplePotential}, propagator::{CoupledEquation, Propagator}, quantum::{clebsch_gordan::{hi32, hu32}, params::{particle::Particle, particles::Particles}, problem_selector::{get_args, ProblemSelector}, problems_impl, units::{Au, CmInv, Dalton, Energy, EnergyUnit, GHz, Kelvin, MHz, Mass}, utility::linspace}, utility::{save_data, save_serialize, save_spectrum}}, FieldScatteringProblem};
 
 use crate::{basis::{BasisRecipe, SystemProblemBuilder, SystemParams, SystemProblem}, hifi_aniso::{get_aniso_hifi, load_aniso_hifi_data, AnisoType}, potential::{get_potential, load_grid_data}};
 
@@ -96,8 +96,8 @@ impl Problem {
     fn scattering_length() {
         let mag_fields = linspace(0., 8000., 80001);
         let basis_recipe = BasisRecipe {
-            l_max: 10,
-            n_max: 10,
+            l_max: 0,
+            n_max: 0,
             n_tot_max: 0,
             tot_m_projection: hi32!(4),
             parity: ParityBlock::Positive
@@ -151,8 +151,8 @@ impl Problem {
     fn bound_states() {
         let mag_fields = linspace(0., 8000., 1001);
         let basis_recipe = BasisRecipe {
-            l_max: 10,
-            n_max: 10,
+            l_max: 0,
+            n_max: 0,
             n_tot_max: 0,
             tot_m_projection: hi32!(4),
             parity: ParityBlock::Positive
@@ -242,7 +242,7 @@ impl Problem {
 
 pub fn get_params() -> SystemParams {
     let hifi_atom = HifiProblemBuilder::new(hu32!(1/2), hu32!(3/2))
-        .with_nuclear_magneton(Energy(0.0009951414, CmInv).to_au())
+        .with_nuclear_magneton(Energy(1.834216 * Consts::NUCLEAR_MAG, Au).to_au())
         .with_hyperfine_coupling(Energy(0.113990, CmInv).to_au());
 
     SystemParams {
@@ -250,8 +250,8 @@ pub fn get_params() -> SystemParams {
         rotor_i_12: (hu32!(5/2), hu32!(1/2)),
         rot_const: Energy(0.549992, CmInv).to(Au),
         centr_distortion: Energy(1.04072e-6, CmInv).to(Au),
-        gamma_rotor1: Energy(0.0007931149, CmInv).to(Au),
-        gamma_rotor2: Energy(0.0028628567, CmInv).to(Au),
+        gamma_rotor1: Energy(1.45628 * Consts::NUCLEAR_MAG, Au),
+        gamma_rotor2: Energy(5.256642 * Consts::NUCLEAR_MAG, Au),
         spin_rot1: Energy(3.46907e-7, CmInv).to(Au),
         spin_rot2: Energy(1.20083e-6, CmInv).to(Au),
         el_quad: Energy(-1.2517326e-3, CmInv).to(Au),
