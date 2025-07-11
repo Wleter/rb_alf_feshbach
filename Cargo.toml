@@ -5,4 +5,9 @@ edition = "2024"
 
 [dependencies]
 faer = "0.22.6"
+rayon = "1.10"
+indicatif = { version = "0.18", features = ["rayon"]}
 scattering-problems = {git = "https://github.com/Wleter/quantum-rs"}
+
+gauss-quad = "0.2.1"
+spline-interpolation = { git = "https://github.com/Wleter/spline-interpolation.git" }

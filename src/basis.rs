@@ -36,10 +36,10 @@ use crate::operators::nuclear_electric_quad_int_mel;
 pub enum Basis {
     Angular(AngularPair),
     NTot(Spin),
-    RotorI1(Spin),
-    RotorI2(Spin),
     AtomS(Spin),
     AtomI(Spin),
+    RotorI1(Spin),
+    RotorI2(Spin),
 }
 
 #[derive(Clone, Copy, Debug, Default)]
@@ -57,8 +57,8 @@ pub struct SystemParams {
 
     pub rot_const: Energy<Au>,
     pub centr_distortion: Energy<Au>,
-    pub gyro_rotor1: f64,
-    pub gyro_rotor2: f64,
+    pub gamma_rotor1: Energy<Au>,
+    pub gamma_rotor2: Energy<Au>,
     pub spin_rot1: Energy<Au>,
     pub spin_rot2: Energy<Au>,
 
@@ -68,7 +68,7 @@ pub struct SystemParams {
 }
 
 #[derive(Clone)]
-pub struct ProblemBuilder<P, V>
+pub struct SystemProblemBuilder<P, V>
 where
     P: SimplePotential,
     V: SimplePotential,
@@ -77,7 +77,7 @@ where
     pub aniso_hifi: [Vec<(u32, V)>; 3],
 }
 
-impl<P, V> ProblemBuilder<P, V>
+impl<P, V> SystemProblemBuilder<P, V>
 where
     P: SimplePotential,
     V: SimplePotential,
@@ -109,6 +109,8 @@ where
         let spin_rot2 = params.spin_rot2.to_au();
         let nuclear_spin_spin = params.nuclear_spin_spin.to_au();
         let el_quad = params.el_quad.to_au();
+        let gamma_i1 = params.gamma_rotor1.to_au();
+        let gamma_i2 = params.gamma_rotor2.to_au();
 
         let angular_blocks = angular_block_basis
             .iter()
@@ -129,8 +131,8 @@ where
                 let mut zeeman_prop = operator_diagonal_mel!(&basis,
                     |[s_atom: AtomS, i1_rotor: RotorI1, i2_rotor: RotorI2]| {
                         -gamma_e * s_atom.ms.value()
-                            - params.gyro_rotor1 * i1_rotor.ms.value()
-                            - params.gyro_rotor2 * i2_rotor.ms.value()
+                            - gamma_i1 * i1_rotor.ms.value()
+                            - gamma_i2 * i2_rotor.ms.value()
                     }
                 )
                 .into_backed();
@@ -270,10 +272,10 @@ where
             .filter(|b| {
                 let ang = cast_variant!(b[0], Angular);
                 let m_n_tot = cast_variant!(b[1], NTot);
-                let s_atom = cast_variant!(b[3], AtomS);
-                let i_atom = cast_variant!(b[5], AtomI);
-                let i1_rotor = cast_variant!(b[2], RotorI1);
-                let i2_rotor = cast_variant!(b[4], RotorI2);
+                let s_atom = cast_variant!(b[2], AtomS);
+                let i_atom = cast_variant!(b[3], AtomI);
+                let i1_rotor = cast_variant!(b[4], RotorI1);
+                let i2_rotor = cast_variant!(b[5], RotorI2);
 
                 m_n_tot.ms + i1_rotor.ms + s_atom.ms + i2_rotor.ms + i_atom.ms
                     == basis_recipe.tot_m_projection
