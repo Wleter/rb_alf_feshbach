@@ -93,10 +93,10 @@ impl Problem {
     }
 
     fn scattering_length() {
-        let mag_fields = linspace(0., 8000., 80000);
+        let mag_fields = linspace(0., 8000., 80001);
         let basis_recipe = BasisRecipe {
-            l_max: 0,
-            n_max: 0,
+            l_max: 10,
+            n_max: 10,
             n_tot_max: 0,
             tot_m_projection: hi32!(4),
             parity: ParityBlock::Positive
@@ -110,6 +110,9 @@ impl Problem {
 
         let atoms = get_particles(energy_relative);
         let alkali_problem = get_problem(&params, &basis_recipe);
+
+        println!("{}", alkali_problem.basis);
+
 
         let start = Instant::now();
         let scatterings = mag_fields
@@ -148,10 +151,10 @@ impl Problem {
     }
 
     fn bound_states() {
-        let mag_fields = linspace(0., 8000., 1000);
+        let mag_fields = linspace(0., 8000., 1001);
         let basis_recipe = BasisRecipe {
-            l_max: 0,
-            n_max: 0,
+            l_max: 10,
+            n_max: 10,
             n_tot_max: 0,
             tot_m_projection: hi32!(4),
             parity: ParityBlock::Positive
@@ -214,7 +217,7 @@ pub fn get_params() -> SystemParams {
         rot_const: Energy(0.549992, CmInv).to(Au),
         centr_distortion: Energy(1.04072e-6, CmInv).to(Au),
         gamma_rotor1: Energy(0.0007931149, CmInv).to(Au),
-        gamma_rotor2: Energy(1.2517326e-3, CmInv).to(Au),
+        gamma_rotor2: Energy(0.0028628567, CmInv).to(Au),
         spin_rot1: Energy(3.46907e-7, CmInv).to(Au),
         spin_rot2: Energy(1.20083e-6, CmInv).to(Au),
         el_quad: Energy(-1.2517326e-3, CmInv).to(Au),

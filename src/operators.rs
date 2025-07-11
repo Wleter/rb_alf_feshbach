@@ -3,13 +3,13 @@ use scattering_problems::{
         clebsch_gordan::{half_integer::HalfI32, hi32, hu32, wigner_3j, wigner_6j},
         states::{braket::Braket, spins::Spin},
     },
-    utility::{AngularPair, p1_factor, spin_phase_factor},
+    utility::{p1_factor, spin_phase_factor, AngularPair},
 };
 
 #[rustfmt::skip]
 pub fn nuclear_electric_quad_int_mel(ang: Braket<AngularPair>, n_tot: Braket<Spin>, i: Braket<Spin>) -> f64 {
-    if ang.bra.l == ang.ket.l && i.bra.s == i.ket.s { 
-        let factors = p1_factor(n_tot.bra.s) * p1_factor(n_tot.ket.s)
+    if ang.bra.l == ang.ket.l && i.bra.s == i.ket.s && n_tot.bra.ms + i.bra.ms == n_tot.ket.ms + i.ket.ms { 
+        let factors = 0.25 * p1_factor(n_tot.bra.s) * p1_factor(n_tot.ket.s)
             * p1_factor(ang.bra.n) * p1_factor(ang.ket.n);
         let phase = spin_phase_factor(i.bra) * spin_phase_factor(n_tot.ket)
             * (-1f64).powi(2 + (n_tot.bra.s + ang.bra.l + ang.bra.n + ang.bra.n).double_value() as i32 / 2);

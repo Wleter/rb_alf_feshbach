@@ -78,6 +78,8 @@ def plot_surface(
     potential_dec, 
     angle_no = 100, 
     max_val = 100,
+    add_0 = True,
+    levels = 50,
     fig_ax: tuple[Figure, Axes] | None = None
 ) -> tuple[Figure, Axes]:
     if fig_ax is None:
@@ -91,17 +93,18 @@ def plot_surface(
     for i in range(len(r)):
         potential_mesh[i, :] = np.polynomial.legendre.legval(np.cos(polar), potential_dec[i, :])
 
-    # add (0, 0)
     max_val = 100
-    r = np.concatenate(([0], r))
-    polar = np.concatenate(([0], polar))
-    potential_mesh = np.concatenate((potential_mesh[:, 0:1], potential_mesh), axis=1)
-    potential_mesh = np.concatenate((max_val * np.ones_like(potential_mesh[0:1, :]), potential_mesh), axis=0)
+    if add_0:
+        # add (0, 0)
+        r = np.concatenate(([0], r))
+        polar = np.concatenate(([0], polar))
+        potential_mesh = np.concatenate((potential_mesh[:, 0:1], potential_mesh), axis=1)
+        potential_mesh = np.concatenate((max_val * np.ones_like(potential_mesh[0:1, :]), potential_mesh), axis=0)
 
     potential_mesh = np.clip(potential_mesh, -np.inf, max_val)
 
-    ax.contourf(polar, r, potential_mesh, levels=50)
-
+    ax.contourf(polar, r, potential_mesh, levels=levels)
+    
     ax.set_xticklabels([])
     ax.set_yticklabels([])
     ax.grid(False)
