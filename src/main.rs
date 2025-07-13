@@ -24,6 +24,7 @@ problems_impl!(Problem, "AlF + Rb problems",
     "scattering length" => |_| Self::scattering_length(),
     "bound states" => |_| Self::bound_states(),
     "levels" => |_| Self::levels(),
+    "convergence" => |_| Self::convergence(),
 );
 
 impl Problem {
@@ -96,8 +97,8 @@ impl Problem {
     fn scattering_length() {
         let mag_fields = linspace(0., 8000., 80001);
         let basis_recipe = BasisRecipe {
-            l_max: 0,
-            n_max: 0,
+            l_max: 10,
+            n_max: 10,
             n_tot_max: 0,
             tot_m_projection: hi32!(4),
             parity: ParityBlock::Positive
@@ -126,11 +127,11 @@ impl Problem {
                 let potential = &alkali_problem.potential;
 
                 let boundary = Boundary::new_multi_vanishing(4.6, Direction::Outwards, potential.size());
-                let step_rule = LocalWavelengthStepRule::new(4e-3, f64::INFINITY, 500.);
+                let step_rule = LocalWavelengthStepRule::new(4e-3, f64::INFINITY, 400.);
                 let eq = CoupledEquation::from_particles(potential, &atoms);
                 let mut numerov = JohnsonLogDerivative::new(eq, boundary, step_rule);
 
-                numerov.propagate_to(400.);
+                numerov.propagate_to(1500.);
 
                 numerov.s_matrix().observables()
             })
@@ -151,8 +152,8 @@ impl Problem {
     fn bound_states() {
         let mag_fields = linspace(0., 8000., 1001);
         let basis_recipe = BasisRecipe {
-            l_max: 0,
-            n_max: 0,
+            l_max: 10,
+            n_max: 10,
             n_tot_max: 0,
             tot_m_projection: hi32!(4),
             parity: ParityBlock::Positive
@@ -181,7 +182,7 @@ impl Problem {
                 let potential = &alkali_problem.potential;
 
                 let bound_problem = BoundProblemBuilder::new(&atoms, potential)
-                    .with_propagation(LocalWavelengthStepRule::new(4e-3, 10., 500.), Johnson)
+                    .with_propagation(LocalWavelengthStepRule::new(4e-3, 10., 400.), Johnson)
                     .with_range(4.6, 20., 400.)
                     .build();
 
@@ -237,6 +238,62 @@ impl Problem {
             &mag_fields,
             &levels
         ).unwrap()
+    }
+
+    fn convergence() {
+        let values = [1e-4, 1e-3, 4e-3, 1e-2];
+
+        let basis_recipe = BasisRecipe {
+            l_max: 10,
+            n_max: 10,
+            n_tot_max: 0,
+            tot_m_projection: hi32!(4),
+            parity: ParityBlock::Positive
+        };
+
+        let entrance = 0;
+
+        let energy_relative = Energy(1e-7, Kelvin);
+        
+        let params = get_params();
+
+        let atoms = get_particles(energy_relative);
+        let alkali_problem = get_problem(&params, &basis_recipe);
+
+        let start = Instant::now();
+        let scatterings = values
+            .par_iter()
+            .progress()
+            .map(|&value| {
+                let mut atoms = atoms.clone();
+
+                let alkali_problem = alkali_problem.scattering_for(0.);
+                let mut asymptotic = alkali_problem.asymptotic;
+                asymptotic.entrance = entrance;
+                atoms.insert(asymptotic);
+                let potential = &alkali_problem.potential;
+
+                let boundary = Boundary::new_multi_vanishing(4.6, Direction::Outwards, potential.size());
+                let step_rule = LocalWavelengthStepRule::new(value, f64::INFINITY, 400.);
+                let eq = CoupledEquation::from_particles(potential, &atoms);
+                let mut numerov = JohnsonLogDerivative::new(eq, boundary, step_rule);
+
+                numerov.propagate_to(1500.);
+
+                numerov.s_matrix().observables()
+            })
+            .collect::<Vec<ScatteringObservables>>();
+
+        let elapsed = start.elapsed();
+        println!("calculated in {:.2} s", elapsed.as_secs_f64());
+
+        let data = ScatteringDependence {
+            parameters: values.into(),
+            observables: scatterings,
+        };
+
+        let filename = format!("alf_rb_scattering_n_max_{}_convergence_dr", basis_recipe.n_max);
+        save_serialize(&filename, &data).unwrap()
     }
 }
 
