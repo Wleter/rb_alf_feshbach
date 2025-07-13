@@ -127,7 +127,7 @@ impl Problem {
                 let potential = &alkali_problem.potential;
 
                 let boundary = Boundary::new_multi_vanishing(4.6, Direction::Outwards, potential.size());
-                let step_rule = LocalWavelengthStepRule::new(4e-3, f64::INFINITY, 400.);
+                let step_rule = LocalWavelengthStepRule::new(4e-3, 10., 400.);
                 let eq = CoupledEquation::from_particles(potential, &atoms);
                 let mut numerov = JohnsonLogDerivative::new(eq, boundary, step_rule);
 
@@ -152,8 +152,8 @@ impl Problem {
     fn bound_states() {
         let mag_fields = linspace(0., 8000., 1001);
         let basis_recipe = BasisRecipe {
-            l_max: 10,
-            n_max: 10,
+            l_max: 0,
+            n_max: 0,
             n_tot_max: 0,
             tot_m_projection: hi32!(4),
             parity: ParityBlock::Positive
@@ -274,7 +274,7 @@ impl Problem {
                 let potential = &alkali_problem.potential;
 
                 let boundary = Boundary::new_multi_vanishing(4.6, Direction::Outwards, potential.size());
-                let step_rule = LocalWavelengthStepRule::new(value, f64::INFINITY, 400.);
+                let step_rule = LocalWavelengthStepRule::new(value, 10., 400.);
                 let eq = CoupledEquation::from_particles(potential, &atoms);
                 let mut numerov = JohnsonLogDerivative::new(eq, boundary, step_rule);
 
