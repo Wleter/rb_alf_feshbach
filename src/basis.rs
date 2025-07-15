@@ -277,7 +277,7 @@ where
                 let i1_rotor = cast_variant!(b[4], RotorI1);
                 let i2_rotor = cast_variant!(b[5], RotorI2);
 
-                m_n_tot.ms + i1_rotor.ms + s_atom.ms + i2_rotor.ms + i_atom.ms
+                m_n_tot.ms + i1_rotor.ms + i2_rotor.ms + s_atom.ms + i_atom.ms
                     == basis_recipe.tot_m_projection
                     && (ang.l + ang.n) >= m_n_tot.s
                     && (ang.l + m_n_tot.s) >= ang.n

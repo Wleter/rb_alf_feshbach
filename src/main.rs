@@ -25,6 +25,7 @@ problems_impl!(Problem, "AlF + Rb problems",
     "bound states" => |_| Self::bound_states(),
     "levels" => |_| Self::levels(),
     "convergence" => |_| Self::convergence(),
+    "bound states structureless" => |_| Self::structureless_bounds(),
 );
 
 impl Problem {
@@ -152,8 +153,8 @@ impl Problem {
     fn bound_states() {
         let mag_fields = linspace(0., 8000., 1001);
         let basis_recipe = BasisRecipe {
-            l_max: 0,
-            n_max: 0,
+            l_max: 65,
+            n_max: 65,
             n_tot_max: 0,
             tot_m_projection: hi32!(4),
             parity: ParityBlock::Positive
@@ -170,8 +171,9 @@ impl Problem {
 
         let start = Instant::now();
         let bound_states = mag_fields
-            .par_iter()
-            .progress()
+            .iter()
+            // .par_iter()
+            // .progress()
             .map(|&mag_field| {
                 let mut atoms = atoms.clone();
 
@@ -186,9 +188,15 @@ impl Problem {
                     .with_range(4.6, 20., 400.)
                     .build();
 
-                bound_problem
+                let bounds = bound_problem
                     .bound_states(energy_range, err)
-                    .with_energy_units(GHz)
+                    .with_energy_units(GHz);
+
+                for (e, n) in bounds.energies.iter().zip(bounds.nodes.iter()) {
+                    println!("{}, {}, {}", mag_field, n, e);
+                }
+
+                bounds
             })
             .collect::<Vec<BoundStates>>();
 
@@ -293,6 +301,74 @@ impl Problem {
         };
 
         let filename = format!("alf_rb_scattering_n_max_{}_convergence_dr", basis_recipe.n_max);
+        save_serialize(&filename, &data).unwrap()
+    }
+
+    fn structureless_bounds() {
+        let basis_recipe = BasisRecipe {
+            l_max: 65,
+            n_max: 65,
+            n_tot_max: 0,
+            tot_m_projection: hi32!(0),
+            // tot_m_projection: hi32!(5),
+            parity: ParityBlock::Positive
+        };
+
+        // let params = get_params();
+        let params = {
+            let hifi_atom = HifiProblemBuilder::new(hu32!(0), hu32!(0));
+
+            SystemParams {
+                hifi_atom: hifi_atom,
+                rot_const: Energy(0.549992, CmInv).to(Au),
+                rotor_i_12: (hu32!(0), hu32!(0)),
+                centr_distortion: Energy(1.04072e-6, CmInv).to(Au),
+                gamma_rotor1: Energy(0., Au),
+                gamma_rotor2: Energy(0., Au),
+                spin_rot1: Energy(0., CmInv).to(Au),
+                spin_rot2: Energy(0., CmInv).to(Au),
+                el_quad: Energy(0., CmInv).to(Au),
+                nuclear_spin_spin: Energy(0., CmInv).to(Au),
+            }
+        };
+
+
+        let energy_range = (Energy(-100., GHz), Energy(0., GHz));
+        let err = Energy(0.05, MHz);
+
+        let entrance = 0;
+        let energy_relative = Energy(1e-7, Kelvin);
+
+        let atoms = get_particles(energy_relative);
+        let alkali_problem = get_problem(&params, &basis_recipe);
+
+        let start = Instant::now();
+        let mut atoms = atoms.clone();
+
+        let alkali_problem = alkali_problem.scattering_for(0.);
+        let mut asymptotic = alkali_problem.asymptotic;
+        asymptotic.entrance = entrance;
+        atoms.insert(asymptotic);
+        let potential = &alkali_problem.potential;
+
+        let bound_problem = BoundProblemBuilder::new(&atoms, potential)
+            .with_propagation(LocalWavelengthStepRule::new(4e-3, 10., 400.), Johnson)
+            .with_range(4.6, 20., 400.)
+            .build();
+
+        let bounds = bound_problem
+            .bound_states(energy_range, err)
+            .with_energy_units(GHz);
+
+        let elapsed = start.elapsed();
+        println!("calculated in {:.2} s", elapsed.as_secs_f64());
+
+        let data = BoundStatesDependence {
+            parameters: vec![0.],
+            bound_states: vec![bounds],
+        };
+
+        let filename = format!("alf_rb_bound_states_n_max_{}_structureless_distortion", basis_recipe.n_max);
         save_serialize(&filename, &data).unwrap()
     }
 }
