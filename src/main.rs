@@ -1,7 +1,7 @@
 use std::time::Instant;
 
-use indicatif::ParallelProgressIterator;
-use scattering_problems::{abm::{consts::Consts, HifiProblemBuilder}, alkali_rotor_atom::ParityBlock, scattering_solver::{boundary::{Boundary, Direction}, log_derivatives::johnson::{Johnson, JohnsonLogDerivative}, numerovs::LocalWavelengthStepRule, observables::{bound_states::{BoundProblemBuilder, BoundStates, BoundStatesDependence}, s_matrix::{ScatteringDependence, ScatteringObservables}}, potentials::potential::{Potential, SimplePotential}, propagator::{CoupledEquation, Propagator}, quantum::{clebsch_gordan::{hi32, hu32}, params::{particle::Particle, particles::Particles}, problem_selector::{get_args, ProblemSelector}, problems_impl, units::{Au, CmInv, Dalton, Energy, EnergyUnit, GHz, Kelvin, MHz, Mass}, utility::linspace}, utility::{save_data, save_serialize, save_spectrum}}, FieldScatteringProblem};
+use indicatif::{ParallelProgressIterator, ProgressIterator};
+use scattering_problems::{abm::{consts::Consts, HifiProblemBuilder}, alkali_rotor_atom::ParityBlock, scattering_solver::{boundary::{Boundary, Direction}, log_derivatives::johnson::{Johnson, JohnsonLogDerivative}, numerovs::LocalWavelengthStepRule, observables::{bound_states::{BoundProblemBuilder, BoundStates, BoundStatesDependence, WaveFunctions}, s_matrix::{ScatteringDependence, ScatteringObservables}}, potentials::potential::{Potential, SimplePotential}, propagator::{CoupledEquation, Propagator}, quantum::{clebsch_gordan::{hi32, hu32}, params::{particle::Particle, particles::Particles}, problem_selector::{get_args, ProblemSelector}, problems_impl, units::{Au, CmInv, Dalton, Energy, EnergyUnit, GHz, Kelvin, MHz, Mass}, utility::linspace}, utility::{save_data, save_serialize, save_spectrum}}, FieldScatteringProblem};
 
 use crate::{basis::{BasisRecipe, SystemProblemBuilder, SystemParams, SystemProblem}, hifi_aniso::{get_aniso_hifi, load_aniso_hifi_data, AnisoType}, potential::{get_potential, load_grid_data}};
 
@@ -26,6 +26,7 @@ problems_impl!(Problem, "AlF + Rb problems",
     "levels" => |_| Self::levels(),
     "convergence" => |_| Self::convergence(),
     "bound states structureless" => |_| Self::structureless_bounds(),
+    "wave function calculation" => |_| Self::wave_function(),
 );
 
 impl Problem {
@@ -96,10 +97,45 @@ impl Problem {
     }
 
     fn scattering_length() {
-        let mag_fields = linspace(0., 8000., 80001);
+        fn end_exclusive(a: f64, b: f64, dr: f64) -> Vec<f64> {
+            let n = ((b - a) / dr).round() as usize;
+            linspace(a, b - dr, n)
+        }
+
+        let dr_small = 0.1;
+        let dr_large = 20.;
+
+        let mag_fields = vec![
+            end_exclusive(0., 655., dr_large),
+            end_exclusive(655., 665., dr_small),
+            end_exclusive(665., 852., dr_large),
+            end_exclusive(852., 862., dr_small),
+            end_exclusive(862., 1510., dr_large),
+            end_exclusive(1510., 1520., dr_small),
+            end_exclusive(1520., 1815., dr_large),
+            end_exclusive(1815., 1830., dr_small),
+            end_exclusive(1830., 3520., dr_large),
+            end_exclusive(3520., 3530., dr_small),
+            end_exclusive(3530., 3935., dr_large),
+            end_exclusive(3935., 3945., dr_small),
+            end_exclusive(3945., 4720., dr_large),
+            end_exclusive(4720., 4735., dr_small),
+            end_exclusive(4735., 5168., dr_large),
+            end_exclusive(5168., 5178., dr_small),
+            end_exclusive(5178., 6685., dr_large),
+            end_exclusive(6685., 6700., dr_small),
+            end_exclusive(6700., 7168., dr_large),
+            end_exclusive(7168., 7178., dr_small),
+            end_exclusive(7178., 10000., dr_large),
+            vec![10000.]
+
+        ].into_iter()
+        .flat_map(|x| x)
+        .collect::<Vec<f64>>();
+        
         let basis_recipe = BasisRecipe {
-            l_max: 10,
-            n_max: 10,
+            l_max: 65,
+            n_max: 65,
             n_tot_max: 0,
             tot_m_projection: hi32!(4),
             parity: ParityBlock::Positive
@@ -116,7 +152,7 @@ impl Problem {
 
         let start = Instant::now();
         let scatterings = mag_fields
-            .par_iter()
+            .iter()
             .progress()
             .map(|&mag_field| {
                 let mut atoms = atoms.clone();
@@ -332,7 +368,6 @@ impl Problem {
             }
         };
 
-
         let energy_range = (Energy(-100., GHz), Energy(0., GHz));
         let err = Energy(0.05, MHz);
 
@@ -370,6 +405,77 @@ impl Problem {
 
         let filename = format!("alf_rb_bound_states_n_max_{}_structureless_distortion", basis_recipe.n_max);
         save_serialize(&filename, &data).unwrap()
+    }
+
+    fn wave_function() {
+        let basis_recipe = BasisRecipe {
+            l_max: 65,
+            n_max: 65,
+            n_tot_max: 0,
+            // tot_m_projection: hi32!(0),
+            tot_m_projection: hi32!(4),// no structure -- 5
+            parity: ParityBlock::Positive
+        };
+        let mag_field = 1815.;
+        let suffix = "1815_field";
+
+        let energy_range = (Energy(-0.1, GHz), Energy(0., GHz));
+        let err = Energy(0.05, MHz);
+
+        let params = get_params();
+        // let params = {
+        //     let hifi_atom = HifiProblemBuilder::new(hu32!(0), hu32!(0));
+
+        //     SystemParams {
+        //         hifi_atom: hifi_atom,
+        //         rot_const: Energy(0.549992, CmInv).to(Au),
+        //         rotor_i_12: (hu32!(0), hu32!(0)),
+        //         centr_distortion: Energy(1.04072e-6, CmInv).to(Au),
+        //         gamma_rotor1: Energy(0., Au),
+        //         gamma_rotor2: Energy(0., Au),
+        //         spin_rot1: Energy(0., CmInv).to(Au),
+        //         spin_rot2: Energy(0., CmInv).to(Au),
+        //         el_quad: Energy(0., CmInv).to(Au),
+        //         nuclear_spin_spin: Energy(0., CmInv).to(Au),
+        //     }
+        // };
+
+
+        let entrance = 0;
+        let energy_relative = Energy(1e-7, Kelvin);
+
+        let atoms = get_particles(energy_relative);
+        let alkali_problem = get_problem(&params, &basis_recipe);
+
+        let start = Instant::now();
+        let mut atoms = atoms.clone();
+
+        let alkali_problem = alkali_problem.scattering_for(mag_field);
+        let mut asymptotic = alkali_problem.asymptotic;
+        asymptotic.entrance = entrance;
+        atoms.insert(asymptotic);
+        let potential = &alkali_problem.potential;
+
+        let bound_problem = BoundProblemBuilder::new(&atoms, potential)
+            .with_propagation(LocalWavelengthStepRule::new(4e-3, 10., 400.), Johnson)
+            .with_range(4.6, 20., 400.)
+            .build();
+
+        let bounds = bound_problem
+            .bound_states(energy_range, err);
+
+        let waves = bound_problem.bound_waves(&bounds).map(|x| x.normalize()).collect();
+
+        let elapsed = start.elapsed();
+        println!("calculated in {:.2} s", elapsed.as_secs_f64());
+
+        let waves = WaveFunctions {
+            bounds,
+            waves,
+        };
+
+        let filename = format!("alf_rb_wavefunction_n_max_{}_{suffix}", basis_recipe.n_max);
+        save_serialize(&filename, &waves).unwrap()
     }
 }
 

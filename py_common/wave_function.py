@@ -1,6 +1,10 @@
+from dataclasses import dataclass
+import json
 import re
 import numpy as np
+import numpy.typing as npt
 from array import array
+from .units import GHZ
 
 def parse_wavefunction_file(path, basis_size, max_coeff=None):
     header_re = re.compile(r"WAVEFUNCTION FOR STATE\s+(\d+)\s+AT ENERGY\s+([-+]?\d*\.\d+(?:[eE][+-]?\d+)?)")
@@ -59,6 +63,23 @@ def parse_wavefunction_file(path, basis_size, max_coeff=None):
         }
 
     return data
+
+@dataclass
+class WaveFunction:
+    energy: float
+    distances: npt.NDArray
+    values: npt.NDArray
+
+def wavefunction_json(path: str, take: int) -> dict[int, WaveFunction]:
+    with open(path, "r") as file:
+        data = json.load(file)
+
+    waves = {}
+    for (n, e, w) in zip(data["bounds"]["nodes"], data["bounds"]["energies"], data["waves"]):
+        wave = WaveFunction(e / GHZ, np.array(w["distances"]), np.array(w["values"])[:, :take])
+        waves[n] = wave
+
+    return waves
 
 if __name__ == '__main__':
     parsed = parse_wavefunction_file('data/wave_function_singlet_175.output', 176, max_coeff = 5)

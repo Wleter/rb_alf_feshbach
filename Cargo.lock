@@ -5,7 +5,7 @@ version = 4
 [[package]]
 name = "abm"
 version = "0.1.0"
-source = "git+https://github.com/Wleter/quantum-rs#de6d8253775e8da3ec9c50ea1d1bf0fff48176b6"
+source = "git+https://github.com/Wleter/quantum-rs?branch=master#a5d032e864bb36a902044d15dcfb7bd8e24a43f7"
 dependencies = [
  "clebsch-gordan",
  "faer",
@@ -1372,7 +1372,7 @@ dependencies = [
 [[package]]
 name = "quantum"
 version = "0.1.0"
-source = "git+https://github.com/Wleter/quantum-rs#de6d8253775e8da3ec9c50ea1d1bf0fff48176b6"
+source = "git+https://github.com/Wleter/quantum-rs?branch=master#a5d032e864bb36a902044d15dcfb7bd8e24a43f7"
 dependencies = [
  "clebsch-gordan",
  "downcast-rs",
@@ -1604,7 +1604,7 @@ dependencies = [
 [[package]]
 name = "scattering-problems"
 version = "0.1.0"
-source = "git+https://github.com/Wleter/quantum-rs#de6d8253775e8da3ec9c50ea1d1bf0fff48176b6"
+source = "git+https://github.com/Wleter/quantum-rs?branch=master#a5d032e864bb36a902044d15dcfb7bd8e24a43f7"
 dependencies = [
  "abm",
  "argmin",
@@ -1618,6 +1618,7 @@ dependencies = [
  "num",
  "quantum",
  "rayon",
+ "regex",
  "scattering-solver",
  "spline-interpolation",
 ]
@@ -1625,7 +1626,7 @@ dependencies = [
 [[package]]
 name = "scattering-solver"
 version = "0.1.0"
-source = "git+https://github.com/Wleter/quantum-rs#de6d8253775e8da3ec9c50ea1d1bf0fff48176b6"
+source = "git+https://github.com/Wleter/quantum-rs?branch=master#a5d032e864bb36a902044d15dcfb7bd8e24a43f7"
 dependencies = [
  "faer",
  "hhmmss",

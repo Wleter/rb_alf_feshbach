@@ -20,7 +20,7 @@ class AxesArray:
     ncols: int
     
     def __getitem__(self, key) -> Axes:
-        return self.array[key]
+        return self.array[key] if self.nrows * self.ncols > 1 else self.array
     
     def __iter__(self):
         return AxesIter(self, 0)
