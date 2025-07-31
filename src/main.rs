@@ -97,45 +97,11 @@ impl Problem {
     }
 
     fn scattering_length() {
-        fn end_exclusive(a: f64, b: f64, dr: f64) -> Vec<f64> {
-            let n = ((b - a) / dr).round() as usize;
-            linspace(a, b - dr, n)
-        }
-
-        let dr_small = 0.1;
-        let dr_large = 20.;
-
-        let mag_fields = vec![
-            end_exclusive(0., 655., dr_large),
-            end_exclusive(655., 665., dr_small),
-            end_exclusive(665., 852., dr_large),
-            end_exclusive(852., 862., dr_small),
-            end_exclusive(862., 1510., dr_large),
-            end_exclusive(1510., 1520., dr_small),
-            end_exclusive(1520., 1815., dr_large),
-            end_exclusive(1815., 1830., dr_small),
-            end_exclusive(1830., 3520., dr_large),
-            end_exclusive(3520., 3530., dr_small),
-            end_exclusive(3530., 3935., dr_large),
-            end_exclusive(3935., 3945., dr_small),
-            end_exclusive(3945., 4720., dr_large),
-            end_exclusive(4720., 4735., dr_small),
-            end_exclusive(4735., 5168., dr_large),
-            end_exclusive(5168., 5178., dr_small),
-            end_exclusive(5178., 6685., dr_large),
-            end_exclusive(6685., 6700., dr_small),
-            end_exclusive(6700., 7168., dr_large),
-            end_exclusive(7168., 7178., dr_small),
-            end_exclusive(7178., 10000., dr_large),
-            vec![10000.]
-
-        ].into_iter()
-        .flat_map(|x| x)
-        .collect::<Vec<f64>>();
+        let mag_fields = linspace(0., 8000., 80001);
         
         let basis_recipe = BasisRecipe {
-            l_max: 65,
-            n_max: 65,
+            l_max: 0,
+            n_max: 0,
             n_tot_max: 0,
             tot_m_projection: hi32!(4),
             parity: ParityBlock::Positive
@@ -152,7 +118,7 @@ impl Problem {
 
         let start = Instant::now();
         let scatterings = mag_fields
-            .iter()
+            .par_iter()
             .progress()
             .map(|&mag_field| {
                 let mut atoms = atoms.clone();
