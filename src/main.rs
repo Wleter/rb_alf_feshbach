@@ -416,11 +416,11 @@ impl Problem {
             tot_m_projection: hi32!(4),// no structure -- 5
             parity: ParityBlock::Positive
         };
-        let mag_field = 1815.;
-        let suffix = "1815_field";
+        let mag_field = 1822.;
+        let suffix = "1822_field";
 
         let energy_range = (Energy(-0.1, GHz), Energy(0., GHz));
-        let err = Energy(0.05, MHz);
+        let err = Energy(0.005, MHz);
 
         let params = get_params();
         // let params = {
@@ -458,7 +458,7 @@ impl Problem {
 
         let bound_problem = BoundProblemBuilder::new(&atoms, potential)
             .with_propagation(LocalWavelengthStepRule::new(4e-3, 10., 400.), Johnson)
-            .with_range(4.6, 20., 400.)
+            .with_range(4.6, 20., 1000.)
             .build();
 
         let bounds = bound_problem
