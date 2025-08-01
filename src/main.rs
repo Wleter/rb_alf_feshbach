@@ -1,5 +1,6 @@
 use std::time::Instant;
 
+#[allow(unused)]
 use indicatif::{ParallelProgressIterator, ProgressIterator};
 use scattering_problems::{abm::{consts::Consts, HifiProblemBuilder}, alkali_rotor_atom::ParityBlock, scattering_solver::{boundary::{Boundary, Direction}, log_derivatives::johnson::{Johnson, JohnsonLogDerivative}, numerovs::LocalWavelengthStepRule, observables::{bound_states::{BoundProblemBuilder, BoundStates, BoundStatesDependence, WaveFunctions}, s_matrix::{ScatteringDependence, ScatteringObservables}}, potentials::potential::{Potential, SimplePotential}, propagator::{CoupledEquation, Propagator}, quantum::{clebsch_gordan::{hi32, hu32}, params::{particle::Particle, particles::Particles}, problem_selector::{get_args, ProblemSelector}, problems_impl, units::{Au, CmInv, Dalton, Energy, EnergyUnit, GHz, Kelvin, MHz, Mass}, utility::linspace}, utility::{save_data, save_serialize, save_spectrum}}, FieldScatteringProblem};
 
