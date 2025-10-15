@@ -47,11 +47,6 @@ pub mod operators;
 pub mod potential;
 
 pub fn main() {
-    rayon::ThreadPoolBuilder::new()
-        .num_threads(12)
-        .build_global()
-        .unwrap();
-
     Problem::select(&mut get_args());
 }
 
