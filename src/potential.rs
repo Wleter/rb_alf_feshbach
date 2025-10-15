@@ -1,9 +1,24 @@
-use std::{f64::consts::PI, fs::File, io::{BufRead, BufReader}};
+use std::{
+    f64::consts::PI,
+    fs::File,
+    io::{BufRead, BufReader},
+};
 
 use faer::Mat;
 use gauss_quad::GaussLegendre;
-use scattering_problems::{potential_interpolation::{interpolate_potentials, PotentialArray, TransitionedPotential}, scattering_solver::{potentials::{composite_potential::Composite, dispersion_potential::Dispersion, potential::SimplePotential}, quantum::{units::{CmInv, Unit}, utility::legendre_polynomials}}};
-
+use scattering_problems::{
+    potential_interpolation::{PotentialArray, TransitionedPotential, interpolate_potentials},
+    scattering_solver::{
+        potentials::{
+            composite_potential::Composite, dispersion_potential::Dispersion,
+            potential::SimplePotential,
+        },
+        quantum::{
+            units::{CmInv, Unit},
+            utility::legendre_polynomials,
+        },
+    },
+};
 
 pub fn get_potential() -> Vec<(u32, impl SimplePotential + Clone)> {
     let data = load_grid_data();
@@ -15,10 +30,8 @@ pub fn get_potential() -> Vec<(u32, impl SimplePotential + Clone)> {
         potentials_far.push(Composite::new(Dispersion::new(0., 0)));
     }
 
-    potentials_far[0]
-        .add_potential(Dispersion::new(-1096.4, -6));
-    potentials_far[2]
-        .add_potential(Dispersion::new(-73.8, -6));
+    potentials_far[0].add_potential(Dispersion::new(-1096.4, -6));
+    potentials_far[2].add_potential(Dispersion::new(-73.8, -6));
 
     let transition = |r| {
         if r <= 40. {
@@ -91,9 +104,11 @@ pub fn load_grid_data() -> PotentialArray {
 
     let mut potentials = Vec::new();
     for lambda in 0..angle_no {
-        let values_potential = data.row_iter()
+        let values_potential = data
+            .row_iter()
             .map(|x| {
-                let pot_dec: f64 = weights.clone()
+                let pot_dec: f64 = weights
+                    .clone()
                     .into_iter()
                     .zip(x.iter())
                     .zip(polynomials.iter().map(|ps| ps[lambda as usize]))

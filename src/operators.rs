@@ -3,7 +3,7 @@ use scattering_problems::{
         clebsch_gordan::{half_integer::HalfI32, hi32, hu32, wigner_3j, wigner_6j},
         states::{braket::Braket, spins::Spin},
     },
-    utility::{p1_factor, spin_phase_factor, AngularPair},
+    utility::{AngularPair, p1_factor, spin_phase_factor},
 };
 
 #[rustfmt::skip]

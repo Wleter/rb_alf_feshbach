@@ -1,12 +1,25 @@
-use std::{f64::consts::PI, fs::File, io::{BufRead, BufReader}};
+use std::{
+    f64::consts::PI,
+    fs::File,
+    io::{BufRead, BufReader},
+};
 
-use scattering_problems::{potential_interpolation::{interpolate_potentials, PotentialArray, TransitionedPotential}, scattering_solver::{potentials::{composite_potential::Composite, dispersion_potential::Dispersion, potential::SimplePotential}, quantum::units::{MHz, Unit}}};
+use scattering_problems::{
+    potential_interpolation::{PotentialArray, TransitionedPotential, interpolate_potentials},
+    scattering_solver::{
+        potentials::{
+            composite_potential::Composite, dispersion_potential::Dispersion,
+            potential::SimplePotential,
+        },
+        quantum::units::{MHz, Unit},
+    },
+};
 
 #[derive(Debug, Clone, Copy)]
 pub enum AnisoType {
     Rb,
     Al,
-    F
+    F,
 }
 
 pub fn get_aniso_hifi(aniso_type: AnisoType) -> Vec<(u32, impl SimplePotential + Clone)> {
@@ -66,12 +79,18 @@ pub fn load_aniso_hifi_data(aniso_type: AnisoType) -> PotentialArray {
     for line in f.lines().skip(1) {
         let line = line.unwrap();
         let splitted: Vec<&str> = line.split_whitespace().collect();
-        assert_eq!(splitted.len(), l_max + 2, "Inconsistent number of data per line");
+        assert_eq!(
+            splitted.len(),
+            l_max + 2,
+            "Inconsistent number of data per line"
+        );
 
         rs.push(splitted[0].parse::<f64>().unwrap());
         for l in 0..=l_max {
-                            // -1 factor because of mismatch in angle convention
-            data[l].1.push((-1.0f64).powi(l as i32) * splitted[l + 1].parse::<f64>().unwrap() * MHz::TO_AU_MUL);
+            // -1 factor because of mismatch in angle convention
+            data[l].1.push(
+                (-1.0f64).powi(l as i32) * splitted[l + 1].parse::<f64>().unwrap() * MHz::TO_AU_MUL,
+            );
         }
     }
 
@@ -85,5 +104,8 @@ pub fn load_aniso_hifi_data(aniso_type: AnisoType) -> PotentialArray {
         }
     }
 
-    PotentialArray { distances: rs, potentials: data }
+    PotentialArray {
+        distances: rs,
+        potentials: data,
+    }
 }
